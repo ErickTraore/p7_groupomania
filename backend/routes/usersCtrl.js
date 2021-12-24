@@ -148,6 +148,7 @@ module.exports = {
         next;
 
     },
+
     getUserProfile: function(req, res) {
         // Getting auth header
         var headerAuth = req.headers['authorization'];

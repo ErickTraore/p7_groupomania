@@ -28,7 +28,7 @@ const routes = [{
         // this generates a separate chunk (about.[hash].js) for this route
         // which is lazy-loaded when the route is visited.
         component: () =>
-            import ( /* webpackChunkName: "login" */ '../views/Logout.vue')
+            import ( /* webpackChunkName: "logout" */ '../views/Logout.vue')
     },
     {
         path: '/signup',
@@ -38,7 +38,7 @@ const routes = [{
         // this generates a separate chunk (about.[hash].js) for this route
         // which is lazy-loaded when the route is visited.
         component: () =>
-            import ( /* webpackChunkName: "signÌn" */ '../views/Signup.vue')
+            import ( /* webpackChunkName: "signup" */ '../views/Signup.vue')
     },
     {
         path: '/profile',
@@ -61,15 +61,22 @@ const routes = [{
         path: '/compte',
         name: 'Compte',
         component: () =>
-            import ( /* webpackChunkName: "login" */ '../views/Compte.vue')
-    }, {
+            import ( /* webpackChunkName: "compte.vue" */ '../views/Compte.vue')
+    },
+    {
+        path: '/comptemessages',
+        name: 'Comptemessages',
+        component: () =>
+            import ( /* webpackChunkName: "comptemessages" */ '../views/Comptemessages.vue')
+    },
+    {
         path: '*',
         name: 'NotFound',
         // route level code-splitting
         // this generates a separate chunk (about.[hash].js) for this route
         // which is lazy-loaded when the route is visited.
         component: () =>
-            import ( /* webpackChunkName: "updateUserProfile" */ '../views/PageNotFound.vue')
+            import ( /* webpackChunkName: "pageNotFound.vue'" */ '../views/PageNotFound.vue')
     }
 ]
 

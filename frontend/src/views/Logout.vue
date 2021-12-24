@@ -20,6 +20,8 @@ export default {
       logoutClick () {
         this.$store.dispatch('beforeLogged')
          window.localStorage.clear()
+         window.location.reload();
+
         //  <a href = "/login"> page d'acceuil </a> 
 
         },
@@ -28,6 +30,7 @@ export default {
           this.$router.push('/') 
 
         }
+        
 }
 }
 

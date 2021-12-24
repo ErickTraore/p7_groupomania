@@ -95,8 +95,10 @@
                       }
                     let sessionStore = JSON.stringify(objMySession);
                     localStorage.setItem("obj",sessionStore);
-                    this.$store.dispatch("nowLogged")
+                    this.$store.dispatch("nowLogged");
                     this.$router.push({path: '/'});
+                    window.location.reload();
+
                     })
 
           .catch(error => console.log(error()))

@@ -2,21 +2,21 @@
     "development": {
         "username": "tde",
         "password": "Erick2691",
-        "database": "dbLaura_development",
+        "database": "dbDaouda_development",
         "host": "127.0.0.1",
         "dialect": "mysql"
     },
     "test": {
         "username": "tde",
         "password": "Erick2691",
-        "database": "dbLaura_test",
+        "database": "dbDaouda_test",
         "host": "127.0.0.1",
         "dialect": "mysql"
     },
     "production": {
         "username": "tde",
         "password": "Erick2691",
-        "database": "dbLaura_production",
+        "database": "dbDaouda_production",
         "host": "127.0.0.1",
         "dialect": "mysql"
     }

@@ -3,10 +3,14 @@
         <div class="group__header__body">
 
             <div class="container" v-for="item  in messages" :key="item .id">
-            <!-- <div v-for="item  in messages | paginate" :key="item .id"> -->
-              <!-- <tr v-for="item in items | paginate"> -->
+            
                 <div class="group__header__body__first"> 
                    <div class="group__header__body__first__in"> 
+                     <figure>
+                      <img :src="item.attachment" />
+                      </figure>
+                      <b>Mon id: {{ myId }}</b> <br>
+                      <b>Mon messageUserId: {{ item.UserId}}</b> <br>
                       <b>{{ item .User.username }}</b> à écrit le
                       {{ new Date(item .createdAt) | dateFormat('DD/MM/YYYY') }} à
                       {{ new Date(item .createdAt) | dateFormat('hh:mm') }} : <br>
@@ -37,8 +41,10 @@
                   </div>
                   <div class="right">
                      <div _ngcontent-cpa-c6="" class="dislikes">
-                        <button class="colorRed"
-                                v-on:click="doDelete(item .id)">
+                        <button 
+                        v-if="myId == item.UserId" 
+                        class="colorRed"
+                        v-on:click="doDelete(item .id)">
                            Supprimer votre message
                         </button>
                     </div>
@@ -50,11 +56,19 @@
             </div>
         
             <div class='group__header__body'>
-                <form @submit="postData" method="post">
-                    <label class="labelForm">Nouveau message</label> <br> <br>
+                <form @submit="onPostData" method="post" enctype="multipart/form-data" name="message">
+                    
+                    
+                    <label class="labelForm">Nouveau message avec image optionnelle</label> <br> <br>
+                        <p v-if="errors.length">
+                        <b>Merci de corriger les erreurs suivantes : </b>
+                      <ul>
+                          <li v-for="error in errors" :key="error">{{ error }}</li>
+                      </ul>
+                </p>
                     <input
                             id="title"
-                            v-model="posts.title"
+                            v-model="message.title"
                             type="text"
                             name="title"
                             placeholder="Titre"
@@ -62,13 +76,45 @@
 
                     <input
                             id="content"
-                            v-model="posts.content"
+                            v-model="message.content"
                             type="text"
                             name="content"
                             placeholder="Contenu"
-                    > <br> <br>
+                    > 
+                    <input
+                            id="attachment"
+                            v-model="message.attachment"
+                            type="text"
+                            name="attachment"
+                    > 
+                    <br> 
+                        <div>
+                          <div v-if="!image">
+                            <h2>Select an image</h2>
+                            <div id="list">
+                            </div>
 
-                    <button type="submit">Envoyer</button>
+                            <input 
+                            id="file" 
+                            type="file" 
+                            @change="onFileSelected"
+                            name="attachment"
+                            alt="example"
+                            >
+                          </div>
+                          <div v-else>
+                            <img :src="image" />
+                            <button @click="removeImage">Remove image</button>
+                          </div>
+                        </div><br><br>
+                        <div>
+                        </div>
+                      <button 
+                      type="submit"
+                      value="val"
+
+                      >
+                      Envoyer</button>
                 </form>
             </div>
         </div>
@@ -76,39 +122,85 @@
 </template>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.16/vue.js"></script>
 <script>
+  const path = require("path");
+  const isLocal = typeof process.pkg === "undefined";
+  const basePath = isLocal ? process.cwd() : path.dirname(process.execPath);
+  const baseUri = "ipfs://NewUriToReplace";
+  
+  
+  
+  
+  const http = require("http");
+  var req = require('request');
+
   import Vue from 'vue'
+  import HTTP from 'http'
   import axios from 'axios';
   import VueAxios from 'vue-axios'
   import VueFilterDateFormat from '@vuejs-community/vue-filter-date-format';
+  import FormData from 'form-data'
+  import { mapGetters } from 'vuex'
 
-  Vue.use(VueFilterDateFormat);
-  Vue.use(VueAxios, axios)
+  // const path = require('path').
+   Vue.use(VueFilterDateFormat);
+   Vue.use(VueAxios, axios);
   export default {
+    name: 'Home',
+    computed: {
+      ...mapGetters(["imageExist"])
+,    },
+   
     data() {
       return {
-        messages: [],
-        likes: 0,
-        dislikes:0,
-        posts: {
-          title: null,
-          content: null,
-          loading: false
+        
+              myId:Number,
+              idImage: '',
+              testName:Boolean,
+              file:Blob,
+              errors: [],
+              message: {
+                title: '',
+                content: '',
+                attachment: '',
+              },
+              image:'',
+              selectedFile: null,
+              messages: [],
+              likes: 0,
+              dislikes:0,
+              posts: {
+                  title:'',
+                  content: '',
+                  attachment:'' ,
+                  loading: false
           },
       }
     },
     created() {
+       let objMySession = localStorage.getItem("obj")
+        let myStorageToken = JSON.parse(objMySession)
+        let myId = myStorageToken.myId;
       axios
         .get('http://localhost:3000/api/messages/')
         .then(response => {
+          this.myId = myId
           this.messages = response.data
-
           })
         
         .catch(error => console.log(error()))
+
     },
 
   methods: {
-    
+      resetForm() {
+        console.log('Reseting the form')
+        var self = this; //you need this because *this* will refer to Object.keys below`
+
+        //Iterate through each object field, key is name of the object field`
+        Object.keys(this.message).forEach(function(key,index) {
+          self.message[key] = '';
+        });
+      },
       doLike: function (id) {
         let objMySession = localStorage.getItem("obj")
         let myStorageToken = JSON.parse(objMySession)
@@ -146,31 +238,133 @@
           })
           .catch(error => console.log(error()))
       },
-      postData(e) {
+    onPostData(e) {
+      e.preventDefault();
+        this.errors = [];
+        if (!this.message.title) {
+          this.errors.push('Veillez saisir le titre');
+          }
+         else if (this.message.title.length >= 30 || this.message.title.length <= 3){
+          this.errors.push('Votre titre doit comprendre entre 4 et 30 caractères.');
+        }
+        if (!this.message.content) {
+          this.errors.push('Veillez saisir le message');
+        } else if (this.message.content.length >= 150 || this.message.content.length <= 3){
+          this.errors.push('Votre message doit contenir entre 4 et 150 caractères.');
+        }
+        if (!this.errors.length) {
+          console.log('Vérification des inputs --> OK')
+          return this.post(this.message);
+        }
+      },
+        post: function (message, e) {
         let objMySession = localStorage.getItem("obj")
         let myStorageToken = JSON.parse(objMySession)
         let token = myStorageToken.myToken;
-        this.axios.post('http://localhost:3000/api/messages/new/', this.posts, {
+        this.axios.post('http://localhost:3000/api/messages/new/', message, {
             headers: {
               'Authorization': token
             }
           }
         )
-          .then(() => {
-            this.posts = {
-              title: null,
-              content: null,
-            };
+         .then(reponse => {
+            this.message = reponse.data
+            console.log('message crée ok')
             axios
               .get('http://localhost:3000/api/messages/')
-              .then(response => this.messages = response.data)
-              .catch(error => console.log(error()))
+              .then(response => {
+                this.messages = response.data
+                this.resetForm()
+                this.image = '';
+                res.status(200).json(this.messages);
+                })
+              .catch(function(err) {
+                err.statusCode = 401;
+              });
           })
-          .catch(error => console.log(error()))
+          .catch(function(err) {
+                err.statusCode = 401;
+              });
+      },
+      onFileSelected(e) {
+      this.selectedFile = e.target.files[0];
+      var files = e.target.files || e.dataTransfer.files;
+      if (!files.length)
+        return;
+      this.createImage(files[0]);
+    },
+    createImage(file, next) {
+      var image = new Image();
+      var reader = new FileReader();
+      var vm = this;
+      reader.onload = (e) => {
+        vm.image = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      if(this.image)
+        return; 
+        this.pushImage();
+    },
+    pushImage(e) {
+        let objMySession = localStorage.getItem("obj")
+        let myStorageToken = JSON.parse(objMySession)
+        let token = myStorageToken.myToken;
+        const util = require('util');
+        var fileName = fileName;
+        var formData = new FormData();
+        var imagefile = document.querySelector('#file');
+        console.log('Mon imageFile[0] :',imagefile.files[0]);
+        formData.append("file", imagefile.files[0]);
+        axios.post('http://localhost:3000/api/messages/upload', formData, {
+          headers: {
+            'Authorization': token,
+            'Content-Type': 'multipart/form-data' 
+          }
+      })   
+     .then((res) => {
+       console.log('valeure reçu par le back:',res.data);
+       console.log('valeure res.data.idImage:',res.data.idImage);
 
-        e.preventDefault();
-      },  
-      doDelete: function (id) {
+          return res.data.idImage;
+     })
+     .then(function(idImage){
+      //  document.querySelector('#this.attachment').innerHTML = idImage
+
+       const attachment = document.querySelector("#attachment");
+          attachment.value = "http://localhost:3000/images/"+idImage;
+
+          attachment.dispatchEvent(new Event('input'));
+
+          response.status(200).json({idImage})
+     })
+    .catch(function(err) {
+     err.statusCode = 401;
+                    });
+  },
+    removeImage: function(e) {
+        let objMySession = localStorage.getItem("obj")
+        let myStorageToken = JSON.parse(objMySession)
+        let token = myStorageToken.myToken;
+        var fileName = this.selectedFile.name;
+        
+        console.log('Envoie dufichier pour écrasement',fileName);
+        var formData = new FormData();
+        formData.append("file", this.selectedFile);
+      
+        axios.post('http://localhost:3000/api/messages/delLienImage', formData, {
+          headers: {
+            'Authorization': token,
+            'Content-Type': 'multipart/form-data' 
+          }
+      })   
+
+      this.image = '';
+      console.log('Le fichier vient d\'être effacé du navigateur');
+      this.message.attachment = '';
+      console.log('L\'url du fichier vient d\'être effacé du formulaire');
+      e.preventDefault();
+    },
+    doDelete: function (id) {
         let objMySession = localStorage.getItem("obj")
         let myStorageToken = JSON.parse(objMySession)
         let token = myStorageToken.myToken;
@@ -179,12 +373,28 @@
               'Authorization': token
             }
           })
-              .then(response => this.messages = response.data)
-              .catch(error => console.log(error()))
-      },
-    }
+        .then(reponse => {
+            console.log('Deleting message-1')
+            axios
+              .get('http://localhost:3000/api/messages/')
+              .then(response => {
+                console.log('Deleting message')
+                this.messages = response.data
+                this.resetForm()
+                res.status(200).json(this.messages);
+                })
+               .catch(function(err) {
+                err.statusCode = 401;
+                });
+          })
+        .catch(function(err) {
+              err.statusCode = 401;
+              });
+      }
+  }
   }
 </script>
+
 <style scoped>
     .group {
         height: 100%;
@@ -228,7 +438,7 @@
     }
   .position{
         display: flex;
-justify-content: space-between;
+        justify-content: space-between;
 
   }
   .left{
@@ -264,4 +474,11 @@ border: solid 1px black;
    .labelForm {
      color:white;
    }
+img {
+  width: 30%;
+  margin: auto;
+  display: block;
+  margin-bottom: 10px;
+}
+
 </style>

@@ -5,7 +5,6 @@
 
        <div> Continuer votre visite  
             <button @click="continuerClick" >  Retour page d'accueille  </button> </div>
-         <!-- <a href="/Singnup#/signup">page d'acceuil/a> -->
       <div>Merci de votre visite
             <button @click="logoutClick"> Se Déconnecter </button> </div> <br> 
 
